@@ -1,0 +1,823 @@
+---
+title: "Popular Songs Statistical Analysis"
+author: "Allen Lau"
+date: "2022-10-13"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r load-packages, message=FALSE}
+#Loading R Packages 
+library(statsr)
+library(dplyr)
+library(ggplot2)
+library(fitdistrplus)
+```
+
+## Spotify All Time Top 2000 Songs Analysis
+
+**1. Data Set**
+
+Dataset Info:<br/>
+<ol>
+<li> Source: https://www.kaggle.com/datasets/iamsumat/spotify-top-2000s-mega-dataset
+
+```{r}
+#Import CSV File and store data frame in variable df 
+df <- read.csv("Spotify-2000.csv") 
+
+#Display the first 5 rows to confirm import looks correct
+head(df, n = 5)
+```
+
+<li> Contents:
+```{r}
+#Number of variables in the data set
+ncol(df)
+
+#Number of entries in the data set 
+nrow(df)
+```
+
+<li> Interest/importance in data set: <br/>
+Music is an important aspect of culture and has been a part of human history for centuries. It can play an important part in things like social gatherings, religion, and storytelling. With the invention of music streaming services, like Spotify, we now have easy access to large amounts of data that can be investigated to understand aspects of human nature and culture. 
+
+<li> Answers to questions to discover:
+<ol><li> Is the popularity of the song related to the energy and danceability of the song?<br/>
+Expectation: My expectation is that more energetic and danceable songs are more popular.<br/> 
+Discovery: More of the top 2000 Spotify songs are energetic, so we could correlate the popularity of the song to the energy. In contrast, there is not a larger number of popular songs that have higher danceability. <br/> 
+<li> Is the popularity of the song related to the release date of the song?<br/>
+Expectation: My expectation is that it is related to the release date of the song. The newer the song, the more likely it is to be popular. <br/> 
+Discovery: From part 7, we conducted in Hypothesis test, which resulted in us rejecting the null hypothesis of there being no difference in the average popularity value between recent and older songs. We can conclude that there is some relationship between the release date and popularity. This would require more analysis.  <br/> 
+<li> Is the popularity of the song related to the speechiness, or the more spoken words the song contains? <br/>
+Expectation: My expectation is that songs with less spoken words are more popular. <br/> 
+Discovery: We do see that there are very few top songs that have high speechiness.<br/> 
+</li></li>
+</li>
+</ol>
+</ol>
+
+**2. Visualization**
+
+Variables of interest:
+<ol>
+<li> Energy - Higher values indicate more energetic songs
+<li> Danceability - Higher values indicate that it is easier to dance to the song 
+<li> Speechiness - Higher values indicate more spoken words in the song 
+</ol>
+
+a. Histogram, Cumulative Relative Frequency and QQ Plot 
+
+<ol>
+<ol><li> Energy
+```{r}
+#Energy: Histogram 
+ggplot(data = df, aes(x = Energy)) +
+  geom_histogram(bins = 15) +
+  ggtitle("Distribution of Energy") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(plot.title = element_text(face="bold"))
+
+#Determine range of energy to determine breaks for cum. rel. freq. plot
+range(df$Energy)
+
+#Energy: Cumulative Relative Frequency 
+breaks <- seq(0,100,1)
+energy.cut <- cut(df$Energy, breaks, right=FALSE)
+energy.freq <- table(energy.cut)
+energy.cumfreq <- cumsum(energy.freq)
+energy.cumrelfreq <- energy.cumfreq / nrow(df)
+cumrelfreq0_energy <- c(0, energy.cumrelfreq)
+plot(breaks, cumrelfreq0_energy, main = "Cumulative Relative Frequency Plot of Energy", xlab = "Energy", ylab = "Cumulative Relative Frequency (%)")
+lines(breaks, cumrelfreq0_energy)
+
+#Energy: QQ Plot 
+qqnorm(df$Energy, main="Normal Q-Q Plot of Energy")
+qqline(df$Energy, col = "red")
+```
+
+<li>Danceability
+```{r}
+#Danceability: Histogram 
+ggplot(data = df, aes(x = Danceability)) +
+  geom_histogram(bins = 15) +
+  ggtitle("Distribution of Danceability") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(plot.title = element_text(face="bold"))
+
+#Determine range of danceability to determine breaks for cum. rel. freq. plot
+range(df$Danceability)
+
+#Danceability: Cumulative Relative Frequency 
+breaks <- seq(10,100,1)
+dance.cut <- cut(df$Danceability, breaks, right=FALSE)
+dance.freq <- table(dance.cut)
+dance.cumfreq <- cumsum(dance.freq)
+dance.cumrelfreq <- dance.cumfreq / nrow(df)
+cumrelfreq0_dance <- c(0, dance.cumrelfreq)
+plot(breaks, cumrelfreq0_dance, main = "Cumulative Relative Frequency Plot of Danceability", xlab = "Danceability", ylab = "Cumulative Relative Frequency (%)")
+lines(breaks, cumrelfreq0_dance)
+
+#Danceability: QQ Plot 
+qqnorm(df$Danceability, main="Normal Q-Q Plot of Danceability")
+qqline(df$Danceability, col = "red")
+```
+
+<li>Speechiness
+```{r}
+#Speechiness: Histogram 
+ggplot(data = df, aes(x = Speechiness)) +
+  geom_histogram(bins = 20) +
+  ggtitle("Distribution of Speechiness") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(plot.title = element_text(face="bold"))
+
+#Determine range of Speechiness to determine breaks for cum. rel. freq. plot
+range(df$Speechiness)
+
+#Speechiness: Cumulative Relative Frequency 
+breaks <- seq(2,55,1)
+Speechiness.cut <- cut(df$Speechiness, breaks, right=FALSE)
+Speechiness.freq <- table(Speechiness.cut)
+Speechiness.cumfreq <- cumsum(Speechiness.freq)
+Speechiness.cumrelfreq <- Speechiness.cumfreq / nrow(df)
+cumrelfreq0_Speechiness <- c(0, Speechiness.cumrelfreq)
+plot(breaks, cumrelfreq0_Speechiness, main = "Cumulative Relative Frequency Plot of Speechiness", xlab = "Speechiness", ylab = "Cumulative Relative Frequency (%)")
+lines(breaks, cumrelfreq0_Speechiness)
+
+#Speechiness: QQ Plot 
+qqnorm(df$Speechiness, main="Normal Q-Q Plot of Speechiness")
+qqline(df$Speechiness, col = "red")
+```
+</li></li>
+</li>
+</ol>
+</ol>
+
+b. Approximately normal histograms <br/>
+Yes. Looking at the distribution of Danceability, we can say that it is approximately normal. This is also seen in the QQ plot, where the majority of points are on the line with some minor deviations along the tails. 
+
+
+**3. Point Estimates** 
+
+a. Sample mean, median, mode, variance, standard deviation 
+
+<ol>
+```{r}
+#Function to determine mode 
+mode <- function(x) {
+  uniqueVal <- unique(x)
+  uniqueVal[which.max(tabulate(match(x, uniqueVal)))]
+}
+```
+
+<ol><li> Energy
+```{r}
+#Energy: mean, median, variance, standard deviation
+df %>%
+  summarise(sample_mu = mean(df$Energy),
+            sample_med = median(df$Energy),
+            sample_mode = mode(df$Energy),
+            sample_var = var(df$Energy),
+            sample_sd = sd(df$Energy))
+```
+
+<li>Danceability 
+```{r}
+#Danceability: mean, median, variance, standard deviation
+df %>%
+  summarise(sample_mu = mean(df$Danceability),
+            sample_med = median(df$Danceability),
+            sample_mode = mode(df$Danceability),
+            sample_var = var(df$Danceability),
+            sample_sd = sd(df$Danceability))
+```
+
+<li>Speechiness 
+
+```{r}
+#Speechiness: mean, median, variance, standard deviation
+df %>%
+  summarise(sample_mu = mean(df$Speechiness),
+            sample_med = median(df$Speechiness),
+            sample_mode = mode(df$Speechiness),
+            sample_var = var(df$Speechiness),
+            sample_sd = sd(df$Speechiness))
+```
+
+</li>
+</ol>
+</ol>
+
+b. Proportion of data within 1.5 IQR
+
+<ol>
+```{r}
+#Function to determine proportion of data values that lies within 1.5IQR
+data_within1_5IQR <- function(x,lbound,ubound){
+  length(x[(x>lbound)&(x<ubound)])/length(df$Energy)
+}
+```
+
+<ol><li> Energy
+```{r}
+#Proportion of data within 1.5IQR for Energy 
+lowerBound = quantile(df$Energy,0.25) - 1.5*IQR(df$Energy)
+upperBound = quantile(df$Energy,0.75) + 1.5*IQR(df$Energy)
+data_within1_5IQR(df$Energy,lowerBound,upperBound)
+```
+
+<li> Danceability 
+
+```{r}
+#Proportion of data within 1.5IQR for Danceability  
+lowerBound = quantile(df$Danceability,0.25) - 1.5*IQR(df$Danceability)
+upperBound = quantile(df$Danceability,0.75) + 1.5*IQR(df$Danceability)
+data_within1_5IQR(df$Danceability,lowerBound,upperBound)
+```
+
+<li> Speechiness  
+
+```{r}
+#Proportion of data within 1.5IQR for Speechiness  
+lowerBound = quantile(df$Speechiness,0.25) - 1.5*IQR(df$Speechiness)
+upperBound = quantile(df$Speechiness,0.75) + 1.5*IQR(df$Speechiness)
+data_within1_5IQR(df$Speechiness,lowerBound,upperBound)
+```
+
+</li>
+</ol>
+</ol>
+
+c. Assuming population variance is the same as sample variance, construct 95% confidence interval for the population mean based on the entire data set and on the proportion determined in b. Are they different?
+
+<ol>
+<ol><li> Energy
+
+```{r}
+# critical value for a 95% confidence interval 
+z_star_95 <- qnorm(0.975)
+
+# Confidence Interval for population mean based on the entire data set and on the portion determined in b. 
+df %>%
+  summarise(lower = mean(df$Energy) - z_star_95 * (sd(df$Energy) / sqrt(length(df$Energy))),
+            upper = mean(df$Energy) + z_star_95 * (sd(df$Energy) / sqrt(length(df$Energy))))
+```
+
+From part b, the entire population of the data set is included within 1.5IQR, so there will be one CI calculation for both the population and sample; therefore, they are not different. 
+
+
+<li> Danceability
+
+```{r}
+# 95% Confidence Interval for population mean based on the entire data set 
+df %>%
+  summarise(lower = mean(df$Danceability) - z_star_95 * (sd(df$Danceability) / sqrt(length(df$Danceability))),
+            upper = mean(df$Danceability) + z_star_95 * (sd(df$Danceability) / sqrt(length(df$Danceability))))
+
+# 95% Confidence Interval for population mean based on the portion determined in b
+lowerBound = quantile(df$Danceability,0.25) - 1.5*IQR(df$Danceability)
+upperBound = quantile(df$Danceability,0.75) + 1.5*IQR(df$Danceability)
+df_sD <- df %>% filter((Danceability>lowerBound)&(Danceability<upperBound))
+df_sD %>%
+  summarise(lower = mean(df_sD$Danceability) - z_star_95 * (sd(df$Danceability) / sqrt(length(df_sD$Danceability))),
+            upper = mean(df_sD$Danceability) + z_star_95 * (sd(df$Danceability) / sqrt(length(df_sD$Danceability))))  
+```
+
+The 95% confidence intervals are slightly different between the CI calculated on the entire data set and on the portion within 1.5IQR. This is due to the changes that occur to the mean and number of values that result from removing the outliers from the data set. For Danceability, since the proportion of data values that lies within 1.5IQR is 0.998, there will only be very slight changes to the 95% CI calculation. 
+
+<li> Speechiness
+
+```{r}
+# 95% Confidence Interval for population mean based on the entire data set
+df %>%
+  summarise(lower = mean(df$Speechiness) - z_star_95 * (sd(df$Speechiness) / sqrt(length(df$Speechiness))),
+            upper = mean(df$Speechiness) + z_star_95 * (sd(df$Speechiness) / sqrt(length(df$Speechiness))))
+
+# 95% Confidence Interval for population mean based on the portion determined in b
+lowerBound = quantile(df$Speechiness,0.25) - 1.5*IQR(df$Speechiness)
+upperBound = quantile(df$Speechiness,0.75) + 1.5*IQR(df$Speechiness)
+df_sS <- df %>% filter((Speechiness>lowerBound)&(Speechiness<upperBound))
+df_sS %>%
+  summarise(lower = mean(df_sS$Speechiness) - z_star_95 * (sd(df$Speechiness) / sqrt(length(df_sS$Speechiness))),
+            upper = mean(df_sS$Speechiness) + z_star_95 * (sd(df$Speechiness) / sqrt(length(df_sS$Speechiness)))) 
+```
+
+The 95% confidence intervals are different between the CI calculated on the entire data set and on the proportion within 1.5IQR. Since the proportion of data values that lies within 1.5IQR for speechiness is 0.888, there will be more significant differences in the mean and number of values that are used to calculate the CI, when compared to the danceability calculations. 
+
+</li>
+</ol>
+</ol>
+
+d. Assuming population variance is unknown, construct 95% confidence interval for the population mean. Is it different from CI computed in part c.
+
+<ol>
+<ol><li> Energy
+
+```{r}
+# t-critical value for a 95% confidence interval 
+t_star_95 <- qt(0.975, df = length(df$Energy) - 1)
+
+#95% CI for population mean, assuming population variance is unknown
+df %>%
+  summarise(lower = mean(df$Energy) - t_star_95 * (sd(df$Energy) / sqrt(length(df$Energy))),
+            upper = mean(df$Energy) + t_star_95 * (sd(df$Energy) / sqrt(length(df$Energy))))
+```
+
+<li> Danceability
+
+```{r}
+# t-critical value for a 95% confidence interval 
+t_star_95 <- qt(0.975, df = length(df_sD$Danceability) - 1)
+
+#95% CI for population mean, assuming population variance is unknown
+df_sD %>%
+  summarise(lower = mean(df_sD$Danceability) - t_star_95 * (sd(df_sD$Danceability) / sqrt(length(df_sD$Danceability))),
+            upper = mean(df_sD$Danceability) + t_star_95 * (sd(df_sD$Danceability) / sqrt(length(df_sD$Danceability))))
+```
+
+<li> Speechiness
+
+```{r}
+# t-critical value for a 95% confidence interval 
+t_star_95 <- qt(0.975, df = length(df_sS$Speechiness) - 1)
+
+#95% CI for population mean, assuming population variance is unknown
+df_sS %>%
+  summarise(lower = mean(df_sS$Speechiness) - t_star_95 * (sd(df_sS$Speechiness) / sqrt(length(df_sS$Speechiness))),
+            upper = mean(df_sS$Speechiness) + t_star_95 * (sd(df_sS$Speechiness) / sqrt(length(df_sS$Speechiness))))
+```
+
+</li>
+</ol>
+Yes, the CI calculated for danceability and energy, assuming population variance is unknown, is different than in part c (when it is known). This is because we now are using the t-critical value instead of z-critical value, because we no longer know the population standard deviation. These two critical values will be different, since t is a function of the p-value and degrees of freedom. When calculating the CI using the t-value, we will be replacing the population standard deviation with the sample standard deviation. 
+
+The CI for energy is also different from part c. However, since the entire data set is included within the 1.5IQR range, the difference is solely driven by the difference between the t and z-values used. 
+</ol>
+</ol>
+
+**4. Modeling**
+
+For each of the selected variables assume that it follows one of the theoretical distributions (choose from Continuous or Discrete).</br>
+
+a. Estimate the parameters of the chosen theoretical distribution, using the appropriate information from your data. </br>
+
+<ol>
+<ol><li> Energy </br>
+Approximate distribution: Weibull Distribution </br>
+Parameters: shape (k), scale ($\lambda$)
+```{r}
+#Estimated parameters for the energy distribution approximated as the weibull distribution  
+fit_w <- fitdist(df$Energy, "weibull")
+fit_w
+```
+
+<li> Danceability </br>
+Approximate distribution: Normal Distribution </br>
+Parameters: mean ($\mu$), standard deviation ($\sigma^2$)
+```{r}
+#Estimated parameters for the danceability distribution approximated as the normal distribution 
+fit_n <- fitdist(df$Danceability, "norm")
+fit_n
+```
+
+<li> Speechiness </br>
+Approximate distribution: Exponential </br>
+Parameters: rate ($\lambda$)
+```{r}
+#Estimated parameters for the speechiness distribution approximated as the exponential distribution 
+fit_e <- fitdist(df$Speechiness, "exp")
+fit_e
+```
+</li></ol>
+</ol>
+
+b. Must your data fit one of the theoretical distributions? Explain. 
+<ol>
+No. We could see that our data does not fit one of the theoretical distributions. There are many considerations to ensuring that the distribution fits with a theoretical distribution, like ensuring all assumptions are met or matching the shape of the distributions. If some of these conditions are not met, then we shouldn't model the data as that theoretical distribution.   
+</ol>
+
+c. Could the data fit more than one theoretical distribution? Explain. 
+
+<ol>
+Yes, the data could fit more than one theoretical distribution. For example, the weibull distribution can fit a wide range of distribution shapes, like approximating the normal distribution. Additionally, if we applied the central limit theorem to the data, we can also approximate the distribution of the sample means as normal.
+</ol> 
+
+d. Display the estimated theoretical distribution and the relative frequency for the variable on the same plot. 
+
+<ol>
+<ol><li> Energy </br>
+```{r}
+#Relative Frequency Plot and Theoretical Distribution 
+denscomp(list(fit_w))
+```
+
+<li> Danceability </br>
+```{r}
+#Relative Frequency Plot and Theoretical Distribution 
+denscomp(list(fit_n))
+```
+
+<li> Speechiness </br>
+```{r}
+#Relative Frequency Plot and Theoretical Distribution 
+denscomp(list(fit_e))
+```
+</li></ol>
+</ol>
+
+e. Does it appear that the data fit the distribution well? Justify by comparing the probabilities to the relative frequencies, and the histograms to the theoretical graphs. 
+<ol>
+The distribution for Danceability and Speechiness fit the distribution well. This can be seen in the above plots, where the histogram follows the normal and exponential theoretical functions well. The Energy distribution does not fit the weibull distribution as well as the other two variables with their respective theoretical distributions. This can be seen in the distribution plots, where the peaks of the two do not line up. In this situation, we could adjust the shape and scale parameters to better fit the distribution. 
+</ol>
+
+
+**5. CLT** 
+
+Use a random number generator to pick N samples of size n from the original data set, where N = 10, 100, 500 and n = 2, 5, 10. Analysis for 5 will be focused on the energy variable in this data set.
+
+a. Computed Average $\overline{x}$
+
+<ol>
+<ol><li> n = 2, N = 10
+```{r}
+# Random Sample Generator for Energy
+s_means_energy2_10 <- df %>%
+  rep_sample_n(size = 2, reps = 10, replace = TRUE) %>%
+  summarise(x_bar_energy = mean(Energy))
+
+# Compute Average x_bar for Energy 
+mean(s_means_energy2_10$x_bar_energy)
+```
+
+<li> n = 2, N = 100
+```{r}
+# Random Sample Generator for Energy
+s_means_energy2_100 <- df %>%
+  rep_sample_n(size = 2, reps = 100, replace = TRUE) %>%
+  summarise(x_bar_energy = mean(Energy))
+
+# Compute Average x_bar for Energy 
+mean(s_means_energy2_100$x_bar_energy)
+```
+
+<li> n = 2, N = 500
+```{r}
+# Random Sample Generator for Energy
+s_means_energy2_500 <- df %>%
+  rep_sample_n(size = 2, reps = 500, replace = TRUE) %>%
+  summarise(x_bar_energy = mean(Energy))
+
+# Compute Average x_bar for Energy 
+mean(s_means_energy2_500$x_bar_energy)
+```
+
+<li> n = 5, N = 10
+```{r}
+# Random Sample Generator for Energy
+s_means_energy5_10 <- df %>%
+  rep_sample_n(size = 5, reps = 10, replace = TRUE) %>%
+  summarise(x_bar_energy = mean(Energy))
+
+# Compute Average x_bar for Energy 
+mean(s_means_energy5_10$x_bar_energy)
+```
+
+<li> n = 5, N = 100
+```{r}
+# Random Sample Generator for Energy
+s_means_energy5_100 <- df %>%
+  rep_sample_n(size = 5, reps = 100, replace = TRUE) %>%
+  summarise(x_bar_energy = mean(Energy))
+
+# Compute Average x_bar for Energy 
+mean(s_means_energy5_100$x_bar_energy)
+```
+
+<li> n = 5, N = 500
+```{r}
+# Random Sample Generator for Energy
+s_means_energy5_500 <- df %>%
+  rep_sample_n(size = 5, reps = 500, replace = TRUE) %>%
+  summarise(x_bar_energy = mean(Energy))
+
+# Compute Average x_bar for Energy 
+mean(s_means_energy5_500$x_bar_energy)
+```
+
+<li> n = 10, N = 10
+```{r}
+# Random Sample Generator for Energy
+s_means_energy10_10 <- df %>%
+  rep_sample_n(size = 10, reps = 10, replace = TRUE) %>%
+  summarise(x_bar_energy = mean(Energy))
+
+# Compute Average x_bar for Energy 
+mean(s_means_energy10_10$x_bar_energy)
+```
+
+<li> n = 10, N = 100
+```{r}
+# Random Sample Generator for Energy
+s_means_energy10_100 <- df %>%
+  rep_sample_n(size = 10, reps = 100, replace = TRUE) %>%
+  summarise(x_bar_energy = mean(Energy))
+
+# Compute Average x_bar for Energy 
+mean(s_means_energy10_100$x_bar_energy)
+```
+
+<li> n = 10, N = 500
+```{r}
+# Random Sample Generator for Energy
+s_means_energy10_500 <- df %>%
+  rep_sample_n(size = 10, reps = 500, replace = TRUE) %>%
+  summarise(x_bar_energy = mean(Energy))
+
+# Compute Average x_bar for Energy 
+mean(s_means_energy10_500$x_bar_energy)
+```
+
+</li></li>
+</ol>
+</ol>
+
+b. Based on the mean and standard deviation from the original data, state the approximate theoretical distribution of $\overline{x}$.
+
+<ol>
+The theoretical distribution of $\overline{x}$ energy is approximately normal depending on the size of the sample. From the calculations and histograms above, we see that we need a sample number of at least 100 for the distribution to approximate a normal distribution. In addition, we can see that with increasing sample numbers (N) and size (n), the mean of the sample distribution gets closer to the true population mean of the entire data set, since extreme values have less impact on the sample mean. In addition, the standard deviation should decrease with increasing samples.  
+
+</ol>
+
+c. Histograms of $\overline{x}$ 
+
+<ol>
+<ol><li> n = 2, N = 10
+```{r}
+# Histogram of x_bar_energy
+ggplot(data = s_means_energy2_10, aes(x = x_bar_energy)) +
+  geom_histogram(bins = 23) +
+  ggtitle("Distribution of x_bar_energy for n = 2, N = 10") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(plot.title = element_text(face="bold"))
+```
+
+<li> n = 2, N = 100
+```{r}
+# Histogram of x_bar_energy
+ggplot(data = s_means_energy2_100, aes(x = x_bar_energy)) +
+  geom_histogram(bins = 23) +
+  ggtitle("Distribution of x_bar_energy for n = 2, N = 100") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(plot.title = element_text(face="bold"))
+```
+
+<li> n = 2, N = 500
+```{r}
+# Histogram of x_bar_energy
+ggplot(data = s_means_energy2_500, aes(x = x_bar_energy)) +
+  geom_histogram(bins = 23) +
+  ggtitle("Distribution of x_bar_energy for n = 2, N = 500") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(plot.title = element_text(face="bold"))
+```
+
+<li> n = 5, N = 10
+```{r}
+# Histogram of x_bar_energy
+ggplot(data = s_means_energy5_10, aes(x = x_bar_energy)) +
+  geom_histogram(bins = 23) +
+  ggtitle("Distribution of x_bar_energy for n = 5, N = 10") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(plot.title = element_text(face="bold"))
+```
+
+<li> n = 5, N = 100
+```{r}
+# Histogram of x_bar_energy
+ggplot(data = s_means_energy5_100, aes(x = x_bar_energy)) +
+  geom_histogram(bins = 23) +
+  ggtitle("Distribution of x_bar_energy for n = 5, N = 100") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(plot.title = element_text(face="bold"))
+```
+
+<li> n = 5, N = 500
+```{r}
+# Histogram of x_bar_energy
+ggplot(data = s_means_energy5_500, aes(x = x_bar_energy)) +
+  geom_histogram(bins = 23) +
+  ggtitle("Distribution of x_bar_energy for n = 5, N = 500") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(plot.title = element_text(face="bold"))
+```
+
+<li> n = 10, N = 10
+```{r}
+# Histogram of x_bar_energy
+ggplot(data = s_means_energy10_10, aes(x = x_bar_energy)) +
+  geom_histogram() +
+  ggtitle("Distribution of x_bar_energy for n = 10, N = 10") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(plot.title = element_text(face="bold"))
+```
+
+<li> n = 10, N = 100
+```{r}
+# Histogram of x_bar_energy
+ggplot(data = s_means_energy10_100, aes(x = x_bar_energy)) +
+  geom_histogram(bins = 23) +
+  ggtitle("Distribution of x_bar_energy for n = 10, N = 100") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(plot.title = element_text(face="bold"))
+```
+
+<li> n = 10, N = 500
+```{r}
+# Histogram of x_bar_energy
+ggplot(data = s_means_energy10_500, aes(x = x_bar_energy)) +
+  geom_histogram(bins = 23) +
+  ggtitle("Distribution of x_bar_energy for n = 10, N = 500") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(plot.title = element_text(face="bold"))
+```
+</li></li>
+</li>
+</ol>
+</ol>
+
+d. Draw the graph of the theoretical distribution of $\overline{x}$ and compare the relative frequencies to the probabilities. Are the values close?
+<ol>
+
+```{r}
+#Relative Frequency Plot for n = 2, N = 500 
+ggplot(data = s_means_energy2_500, aes(x = x_bar_energy)) +
+  geom_histogram(aes(y=..density..) ,bins = 23) +
+  ggtitle("Distribution of x_bar_energy for n = 2, N = 500") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(plot.title = element_text(face="bold")) + 
+  ylab("Density") +
+  stat_function(fun = dnorm, args = list(mean = mean(s_means_energy2_500$x_bar_energy), sd = sd(s_means_energy2_500$x_bar_energy)))
+```
+
+```{r}
+#Relative Frequency Plot for n = 5, N = 500 
+ggplot(data = s_means_energy5_500, aes(x = x_bar_energy)) +
+  geom_histogram(aes(y=..density..) ,bins = 23) +
+  ggtitle("Distribution of x_bar_energy for n = 5, N = 500") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(plot.title = element_text(face="bold")) + 
+  ylab("Density") +
+  stat_function(fun = dnorm, args = list(mean = mean(s_means_energy5_500$x_bar_energy), sd = sd(s_means_energy5_500$x_bar_energy)))
+```
+
+```{r}
+#Relative Frequency Plot for n = 10, N = 500 
+ggplot(data = s_means_energy10_500, aes(x = x_bar_energy)) +
+  geom_histogram(aes(y=..density..) ,bins = 23) +
+  ggtitle("Distribution of x_bar_energy for n = 10, N = 500") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(plot.title = element_text(face="bold")) + 
+  ylab("Density") +
+  stat_function(fun = dnorm, args = list(mean = mean(s_means_energy10_500$x_bar_energy), sd = sd(s_means_energy10_500$x_bar_energy)))
+```
+
+</ol>
+
+e. Does it appear that the data of averages fit the distribution of x_bar well?
+<ol>
+When the sample number is large enough, we can approximate the x_bar distributions as normal. As seen in the relative frequency histograms with the theoretical normal plots, we can see that the shape fits approximately. The n = 10, N = 500 plot is closer to fitting the normal curve due to the larger sample size. 
+</ol>
+
+Additional Questions: What happened to the shape and distribution when the data was averaged? In theory, what should have happened? In theory, would it always happen? Why or why not?
+<ol>
+When the data was averaged, the shape and distribution became closer and closer to the normal distribution, as the sample number increased. In theory, this should be expected due to the Central Limit Theorem (CLT), which states that if you have a population and take a sufficiently large random samples from the population, then the distribution of the sample means will be approximately normal, even if the population distribution is not. However, this does not occur in all cases, because the CLT has assumptions that are required for this property of sample means to approximate as normal distributions to hold true. These assumptions are: the data must be sampled randomly, samples should be independent of each other, sample size should not be more than 10% of the population when sampling is done without replacement, and the sample size should be sufficiently large (in general, n >= 30).  
+</ol>
+
+**6. Relationship between two variables**
+
+<ol>
+Variables 
+<ol>Valence - The higher the value, the more positive the song <br/>
+Beats Per Minute (BPM) -The tempo of the song <br/>
+</ol>
+</ol>
+
+a. Scatter Plot of Valence and BPM
+<ol>
+```{r}
+#Rename Beats Per Minute column to BPM for ease of coding 
+names(df)[names(df)=="Beats.Per.Minute..BPM."] <- "BPM"
+
+#Scatter plot of Valence and BPM
+ggplot(df, aes(x = BPM, y = Valence)) +
+  geom_point(alpha = 0.5) +
+  ggtitle("Plot of Valence and Beats Per Minute") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(plot.title = element_text(face="bold"))
+```
+</ol>
+
+b. Sample correlation coefficient using entire data set 
+<ol>
+```{r}
+#Sample Correlation Coefficient 
+r <- cov(df$BPM, df$Valence)/(sd(df$BPM)*sd(df$Valence))
+r
+```
+</ol>`
+
+c. Estimate 95% CI for the correlation coefficient
+<ol>
+```{r}
+# Critical Value for 95% CI 
+z_star_95 <- qnorm(0.975)
+
+# Calculation for the CI for the correlation coefficient 
+z_r <- log((1+r)/(1-r)) / 2
+L <- z_r - (z_star_95 / sqrt(nrow(df)-3))
+U <- z_r + (z_star_95 / sqrt(nrow(df)-3))
+lower <- (exp(2*L)-1)/(exp(2*L)+1)
+upper <- (exp(2*U)-1)/(exp(2*U)+1)
+CI <- data.frame(lower,upper)
+CI
+```
+</ol>
+
+d. Chi-Square Test of Independence
+
+<ol>
+Null Hypothesis: There is no association between Valence and BPM <br/>
+Alternative Hypothesis: There is an association between Valence and BPM <br/>
+Significance Level: 0.05
+
+```{r}
+#Chi-Square Test for BPM and Valence  
+chisq.test(df$BPM, df$Valence, correct = FALSE, simulate.p.value=TRUE)
+```
+</ol>
+
+e. Summary and Conclusions from a - d 
+<ol>
+From the chi-square test, we obtained a chi-square value of 13807 and a p-value of 0.4333. Since the p-value of 0.4333 is greater than our significance level of 0.05, then we cannot reject the null hypothesis that there is no association between Valence and BPM. This finding is supported by the scatter plot of the two variables, since it does not show any discernible correlation. In addition, the correlation coefficient calculation resulted in 0.06, which indicates no correlation. High correlations are between 0.9 and 1.0. 
+</ol>
+
+**7. Categorical Variable, Box Plot, Hypothesis Test**
+<ol>
+Variables of Interest:
+<ol><li> Categorical Variable - Year (Release year of song)
+<li> Popularity - The higher the value, the more popular the song is  
+</li>
+</li>
+</ol>
+</ol>
+
+a. Box Plot & Discussion
+<ol>
+```{r}
+#Box Plot of Popularity by Year
+ggplot(df, aes(y = Popularity, x = Year, group = Year)) +
+  geom_boxplot() + 
+  xlab("Release Year") + 
+  ylab("Popularity") +
+  ggtitle("Popularity of Song by Release Year") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(plot.title = element_text(face="bold"))
+```
+
+The box plots allow us to visually see if there are outliers of popularity within each Year category, as seen by the black dots. There are only outliers outside of the lower 1.5IQR bound. The box plots also increase in range with increasing year, which may be caused by several factors. For example, later years may have more data points, thus having a higher chance of having a larger range or earlier years may have songs that consistently have a popularity within a certain range. 
+</ol>
+
+b. Hypothesis Testing 
+<ol>
+Question: Is the average popularity of recent songs, defined as those released within the last ten years, different than the average popularity of songs released prior to 10 years ago.  </br>  
+Null Hypothesis: There is no difference in the average popularity value between recent and older songs.   </br>  
+Alternative Hypothesis: There is a difference in the average popularity value between recent and old songs.   </br>  
+Significance Level: 0.05 </br>
+
+```{r}
+#Adding a column, stratifying songs as recent or not recent based on whether it was released within the last 10 years. 
+df <- df %>%
+  mutate(Recent = case_when(
+    Year > 2011 ~ "Recent",
+    Year < 2012 ~ "Not Recent"))
+
+#Hypothesis testing with the above parameters and null/alternative hypotheses 
+inference(y = Popularity, x = Recent, data = df, statistic = "mean", type = "ht", null = 0, alternative = "twosided", method = "theoretical")
+
+```
+
+Conclusion: The p-value is 0.0394 which is smaller than alpha = 0.05. This indicates that we can reject the null hypothesis of there being no difference in the average popularity value between recent and older songs. 
+
+
+
+
+
+
+
